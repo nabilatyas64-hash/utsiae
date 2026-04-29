@@ -5,13 +5,21 @@ namespace App\Http\Controllers;
 use App\Models\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use App\Http\Resources\PaymentResource;
+use Illuminate\Support\Facades\Validator;
 
 class PaymentController extends Controller
 {
     // GET semua payment
     public function index()
     {
-        return response()->json(Payment::all());
+        $payments = Payment::all();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'List semua payment',
+            'data' => PaymentResource::collection($payments)
+        ]);
     }
 
     // GET payment by id
@@ -21,43 +29,58 @@ class PaymentController extends Controller
 
         if (!$payment) {
             return response()->json([
+                'status' => 'failed',
                 'message' => 'Payment tidak ditemukan'
             ], 404);
         }
 
-        return response()->json($payment);
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Detail payment',
+            'data' => new PaymentResource($payment)
+        ]);
     }
 
     // POST payment (ambil dari OrderService)
     public function store(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'order_id' => 'required|integer',
             'method' => 'required|string'
         ]);
 
-        // 🔥 ambil data dari OrderService
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'failed',
+                'message' => 'Validasi gagal',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        // ambil data dari OrderService
         $orderResponse = Http::get('http://127.0.0.1:8003/api/orders/' . $request->input('order_id'));
 
         if ($orderResponse->failed()) {
             return response()->json([
+                'status' => 'failed',
                 'message' => 'Order tidak ditemukan atau service tidak aktif'
             ], 404);
         }
 
         $responseData = $orderResponse->json();
 
-        // 🔥 handle response (data atau langsung)
+        // handle response (data atau langsung)
         $order = isset($responseData['data']) ? $responseData['data'] : $responseData;
 
-        // ❗ validasi total
+        // validasi total
         if (!isset($order['total'])) {
             return response()->json([
+                'status' => 'failed',
                 'message' => 'Field total tidak ditemukan di OrderService'
             ], 500);
         }
 
-        // 🔥 simpan payment
+        // simpan payment
         $payment = Payment::create([
             'order_id' => $request->input('order_id'),
             'amount' => $order['total'],
@@ -66,8 +89,9 @@ class PaymentController extends Controller
         ]);
 
         return response()->json([
-            'message' => 'Payment berhasil',
-            'data' => $payment
+            'status' => 'success',
+            'message' => 'Payment berhasil ditambahkan',
+            'data' => new PaymentResource($payment)
         ], 201);
     }
 
@@ -78,13 +102,15 @@ class PaymentController extends Controller
 
         if (!$payment) {
             return response()->json([
-                'message' => 'Payment tidak ditemukan'
+                'status' => 'failed',
+                'message' => 'Payment gagal dihapus, ID tidak ada'
             ], 404);
         }
 
         $payment->delete();
 
         return response()->json([
+            'status' => 'success',
             'message' => 'Payment berhasil dihapus'
         ]);
     }
