@@ -9,3 +9,4 @@ Route::get('/user', function (Request $request) {
 })->middleware('auth:sanctum');
 Route::post('/orders', [OrderController::class, 'store']);
 Route::get('/orders', [OrderController::class, 'index']);
+Route::get('/orders/{id}', [OrderController::class, 'show']);

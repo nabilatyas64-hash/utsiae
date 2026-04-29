@@ -5,14 +5,12 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use App\Models\Order;
-use App\Http\Resources\OrderResource;
 
 class OrderController extends Controller
 {
     public function store(Request $request)
     {
         try {
-
             $request->validate([
                 'user_id' => 'required',
                 'product_id' => 'required',
@@ -23,31 +21,32 @@ class OrderController extends Controller
 
             if (!$userResponse->successful()) {
                 return response()->json([
-                    'message' => 'UserService error',
-                    'debug' => $userResponse->body()
+                    'status' => 'failed',
+                    'message' => 'User tidak ditemukan'
                 ], 404);
             }
+
+            $userData = $userResponse->json()['data'] ?? $userResponse->json();
 
             $productResponse = Http::get('http://127.0.0.1:8002/api/products/' . $request->product_id);
 
             if (!$productResponse->successful()) {
                 return response()->json([
-                    'message' => 'ProductService error',
-                    'debug' => $productResponse->body()
+                    'status' => 'failed',
+                    'message' => 'Product tidak ditemukan'
                 ], 404);
             }
 
-            $productData = $productResponse->json();
-            $dataProduct = $productData['data'] ?? $productData;
-
-            if (!isset($dataProduct['price_per_kg'])) {
+            $productData = $productResponse->json()['data'] ?? $productResponse->json();
+            
+            if (!isset($productData['price_per_kg'])) {
                 return response()->json([
-                    'message' => 'price_per_kg tidak ditemukan',
-                    'debug' => $dataProduct
+                    'status' => 'failed',
+                    'message' => 'Harga tidak ditemukan'
                 ], 500);
             }
 
-            $total = $dataProduct['price_per_kg'] * $request->qty;
+            $total = $productData['price_per_kg'] * $request->qty;
 
             $order = Order::create([
                 'user_id' => $request->user_id,
@@ -57,13 +56,22 @@ class OrderController extends Controller
             ]);
 
             return response()->json([
-                'message' => 'Order sukses',
-                'data' => $order
-            ]);
+                'status' => 'success',
+                'message' => 'Order berhasil dibuat',
+                'data' => [
+                    'order_id' => $order->id,
+                    'user_name' => $userData['name'] ?? 'unknown',
+                    'product_name' => $productData['name'] ?? 'unknown',
+                    'qty' => $order->qty,
+                    'total_price' => $total
+                ]
+            ], 201);
+
         } catch (\Exception $e) {
             return response()->json([
+                'status' => 'error',
                 'message' => 'Server error',
-                'error' => $e->getMessage(),
+                'error' => $e->getMessage()
             ], 500);
         }
     }
@@ -71,6 +79,58 @@ class OrderController extends Controller
     public function index()
     {
         $orders = Order::all();
-        return OrderResource::collection($orders);
+
+        $result = [];
+
+        foreach ($orders as $order) {
+
+            $user = Http::get("http://127.0.0.1:8001/api/users/" . $order->user_id)->json();
+            $product = Http::get("http://127.0.0.1:8002/api/products/" . $order->product_id)->json();
+
+            $userData = $user['data'] ?? $user;
+            $productData = $product['data'] ?? $product;
+
+            $result[] = [
+                'order_id' => $order->id,
+                'user_name' => $userData['name'] ?? 'unknown',
+                'product_name' => $productData['name'] ?? 'unknown',
+                'qty' => $order->qty,
+                'total_price' => $order->total_price
+            ];
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $result
+        ]);
+    }
+
+    public function show($id)
+    {
+        $order = Order::find($id);
+
+        if (!$order) {
+            return response()->json([
+                'status' => 'failed',
+                'message' => 'Order tidak ditemukan'
+            ], 404);
+        }
+
+        $user = Http::get("http://127.0.0.1:8001/api/users/" . $order->user_id)->json();
+        $product = Http::get("http://127.0.0.1:8002/api/products/" . $order->product_id)->json();
+
+        $userData = $user['data'] ?? $user;
+        $productData = $product['data'] ?? $product;
+
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'order_id' => $order->id,
+                'user_name' => $userData['name'] ?? 'unknown',
+                'product_name' => $productData['name'] ?? 'unknown',
+                'qty' => $order->qty,
+                'total_price' => $order->total_price
+            ]
+        ]);
     }
 }
