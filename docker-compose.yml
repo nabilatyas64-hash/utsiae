@@ -1,16 +1,14 @@
-version: '3.8'
-
 services:
-
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq
     ports:
       - "5672:5672"
       - "15672:15672"
+    networks:
+      - utsiae-network
 
   # ================= USER SERVICE =================
-
   user-service:
     build: ./UserService
     container_name: user-service
@@ -18,19 +16,22 @@ services:
       - "8001:8000"
     depends_on:
       - user-db
+    networks:
+      - utsiae-network
 
   user-db:
     image: mysql:8
     container_name: user-db
     restart: always
     environment:
-      MYSQL_DATABASE: laundry_user_db
+      MYSQL_DATABASE: user_db
       MYSQL_ROOT_PASSWORD: root
     ports:
       - "3307:3306"
+    networks:
+      - utsiae-network
 
   # ================= PRODUCT SERVICE =================
-
   product-service:
     build: ./ProductService
     container_name: product-service
@@ -39,6 +40,8 @@ services:
     depends_on:
       - product-db
       - rabbitmq
+    networks:
+      - utsiae-network
 
   product-db:
     image: mysql:8
@@ -49,9 +52,10 @@ services:
       MYSQL_ROOT_PASSWORD: root
     ports:
       - "3308:3306"
+    networks:
+      - utsiae-network
 
   # ================= ORDER SERVICE =================
-
   order-service:
     build: ./order-service
     container_name: order-service
@@ -60,6 +64,8 @@ services:
     depends_on:
       - order-db
       - rabbitmq
+    networks:
+      - utsiae-network
 
   order-db:
     image: mysql:8
@@ -70,9 +76,10 @@ services:
       MYSQL_ROOT_PASSWORD: root
     ports:
       - "3309:3306"
+    networks:
+      - utsiae-network
 
   # ================= PAYMENT SERVICE =================
-
   payment-service:
     build: ./payment-service
     container_name: payment-service
@@ -81,6 +88,8 @@ services:
     depends_on:
       - payment-db
       - rabbitmq
+    networks:
+      - utsiae-network
 
   payment-db:
     image: mysql:8
@@ -91,3 +100,9 @@ services:
       MYSQL_ROOT_PASSWORD: root
     ports:
       - "3310:3306"
+    networks:
+      - utsiae-network
+
+networks:
+  utsiae-network:
+    driver: bridge
