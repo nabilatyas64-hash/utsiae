@@ -1,6 +1,7 @@
 version: '3.8'
 
 services:
+
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq
@@ -8,13 +9,27 @@ services:
       - "5672:5672"
       - "15672:15672"
 
+  # ================= USER SERVICE =================
+
   user-service:
     build: ./UserService
     container_name: user-service
     ports:
       - "8001:8000"
     depends_on:
-      - rabbitmq
+      - user-db
+
+  user-db:
+    image: mysql:8
+    container_name: user-db
+    restart: always
+    environment:
+      MYSQL_DATABASE: laundry_user_db
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3307:3306"
+
+  # ================= PRODUCT SERVICE =================
 
   product-service:
     build: ./ProductService
@@ -22,7 +37,20 @@ services:
     ports:
       - "8002:8000"
     depends_on:
+      - product-db
       - rabbitmq
+
+  product-db:
+    image: mysql:8
+    container_name: product-db
+    restart: always
+    environment:
+      MYSQL_DATABASE: laundry_product_db
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3308:3306"
+
+  # ================= ORDER SERVICE =================
 
   order-service:
     build: ./order-service
@@ -30,7 +58,20 @@ services:
     ports:
       - "8003:8000"
     depends_on:
+      - order-db
       - rabbitmq
+
+  order-db:
+    image: mysql:8
+    container_name: order-db
+    restart: always
+    environment:
+      MYSQL_DATABASE: laundry_order_db
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3309:3306"
+
+  # ================= PAYMENT SERVICE =================
 
   payment-service:
     build: ./payment-service
@@ -38,4 +79,15 @@ services:
     ports:
       - "8004:8000"
     depends_on:
+      - payment-db
       - rabbitmq
+
+  payment-db:
+    image: mysql:8
+    container_name: payment-db
+    restart: always
+    environment:
+      MYSQL_DATABASE: laundry_payment_db
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3310:3306"
