@@ -12,13 +12,15 @@ RUN apt-get update && apt-get install -y \
     libxml2-dev \
     libzip-dev
 
-RUN docker-php-ext-install pdo pdo_mysql mbstring exif pcntl bcmath gd zip
+RUN docker-php-ext-install pdo pdo_mysql mbstring bcmath zip
 
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 COPY . .
 
-RUN composer install
+RUN composer install --no-interaction --prefer-dist
+
+RUN mkdir -p storage/logs
 
 EXPOSE 9000
 
