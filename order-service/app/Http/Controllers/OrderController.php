@@ -18,7 +18,7 @@ class OrderController extends Controller
                 'qty' => 'required|numeric|min:1',
             ]);
 
-            $userResponse = Http::get('http://127.0.0.1:8001/api/users/' . $request->user_id);
+            $userResponse = Http::get('http://user-service:8000/api/users/' . $request->user_id);
 
             if (!$userResponse->successful()) {
                 return response()->json([
@@ -29,7 +29,7 @@ class OrderController extends Controller
 
             $userData = $userResponse->json()['data'] ?? $userResponse->json();
 
-            $productResponse = Http::get('http://127.0.0.1:8002/api/products/' . $request->product_id);
+            $productResponse = Http::get('http://product-service:8000/api/products/' . $request->product_id);
 
             if (!$productResponse->successful()) {
                 return response()->json([
@@ -57,7 +57,7 @@ class OrderController extends Controller
             ]);
             UpdateProductStock::dispatch([
                 'product_id' => $request->product_id,
-                'quantity' => $request->quantity
+                'quantity' => $request->qty
             ])->onQueue('product-stock-update');
 
             return response()->json([
@@ -88,8 +88,8 @@ class OrderController extends Controller
 
         foreach ($orders as $order) {
 
-            $user = Http::get("http://127.0.0.1:8001/api/users/" . $order->user_id)->json();
-            $product = Http::get("http://127.0.0.1:8002/api/products/" . $order->product_id)->json();
+            $user = Http::get("http://user-service:8000/api/users/" . $order->user_id)->json();
+            $product = Http::get("http://product-service:8000/api/products/" . $order->product_id)->json();
 
             $userData = $user['data'] ?? $user;
             $productData = $product['data'] ?? $product;
@@ -120,8 +120,8 @@ class OrderController extends Controller
             ], 404);
         }
 
-        $user = Http::get("http://127.0.0.1:8001/api/users/" . $order->user_id)->json();
-        $product = Http::get("http://127.0.0.1:8002/api/products/" . $order->product_id)->json();
+        $user = Http::get("http://user-service:8000/api/users/" . $order->user_id)->json();
+        $product = Http::get("http://product-service:8000/api/products/" . $order->product_id)->json();
 
         $userData = $user['data'] ?? $user;
         $productData = $product['data'] ?? $product;
