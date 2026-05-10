@@ -73,6 +73,15 @@ services:
     networks:
       - utsiae-network
 
+  product-worker:
+    build: ./ProductService
+    command: php artisan queue:work rabbitmq --sleep=3 --tries=3
+    depends_on:
+      - product-db
+      - rabbitmq
+    networks:
+      - utsiae-network
+
   order-service:
     build: ./order-service
     ports:

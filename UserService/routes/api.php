@@ -15,3 +15,5 @@ Route::delete('/users/{id}', [UserController::class, 'destroy']);
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
+
+Route::get('/ping', function() { return 'pong'; });

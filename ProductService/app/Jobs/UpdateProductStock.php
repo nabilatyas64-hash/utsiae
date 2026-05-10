@@ -10,21 +10,24 @@ class UpdateProductStock implements ShouldQueue
 {
     use Queueable;
 
-    protected $productId;
-    protected $quantity;
+    public $data;
 
-    public function __construct($productId, $quantity)
+    public function __construct($data)
     {
-        $this->productId = $productId;
-        $this->quantity = $quantity;
+        $this->data = $data;
     }
 
     public function handle(): void
     {
-        $product = Product::find($this->productId);
+        $productId = $this->data['product_id'] ?? null;
+        $quantity = $this->data['quantity'] ?? null;
+
+        if (!$productId || !$quantity) return;
+
+        $product = Product::find($productId);
 
         if ($product) {
-            $product->decrement('stock', $this->quantity);
+            $product->decrement('stock', $quantity);
         }
     }
 }
