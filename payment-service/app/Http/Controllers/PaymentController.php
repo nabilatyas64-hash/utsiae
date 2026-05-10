@@ -17,7 +17,7 @@ class PaymentController extends Controller
 
     foreach ($payments as $payment) {
 
-        $orderResponse = Http::get('http://127.0.0.1:8003/api/orders/' . $payment->order_id);
+        $orderResponse = Http::get('http://order-service:8003/api/orders/' . $payment->order_id);
 
         if ($orderResponse->successful()) {
             $orderData = $orderResponse->json();
@@ -54,7 +54,7 @@ class PaymentController extends Controller
         ], 404);
     }
 
-    $orderResponse = Http::get('http://127.0.0.1:8003/api/orders/' . $payment->order_id);
+    $orderResponse = Http::get('http://order-service:8003/api/orders/' . $payment->order_id);
 
     if ($orderResponse->successful()) {
         $orderData = $orderResponse->json();
@@ -93,7 +93,7 @@ class PaymentController extends Controller
         }
 
         try {
-            $orderResponse = Http::get('http://127.0.0.1:8003/api/orders/' . $request->order_id);
+            $orderResponse = Http::get('http://order-service:8000/api/orders/' . $request->order_id);
 
             if (!$orderResponse->successful()) {
                 return response()->json([
