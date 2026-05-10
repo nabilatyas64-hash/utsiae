@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use App\Models\Order;
+use App\Jobs\UpdateProductStock;
 
 class OrderController extends Controller
 {
@@ -38,7 +39,7 @@ class OrderController extends Controller
             }
 
             $productData = $productResponse->json()['data'] ?? $productResponse->json();
-            
+
             if (!isset($productData['price_per_kg'])) {
                 return response()->json([
                     'status' => 'failed',
@@ -54,6 +55,10 @@ class OrderController extends Controller
                 'qty' => $request->qty,
                 'total_price' => $total
             ]);
+            UpdateProductStock::dispatch([
+                'product_id' => $request->product_id,
+                'quantity' => $request->quantity
+            ])->onQueue('product-stock-update');
 
             return response()->json([
                 'status' => 'success',
@@ -66,7 +71,6 @@ class OrderController extends Controller
                     'total_price' => $total
                 ]
             ], 201);
-
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
