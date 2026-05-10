@@ -65,6 +65,8 @@ services:
 
   product-service:
     build: ./ProductService
+    ports:
+      - "8002:8000"
     depends_on:
       - product-db
       - rabbitmq
@@ -83,6 +85,8 @@ services:
 
   payment-service:
     build: ./payment-service
+    ports:
+      - "8004:8000"
     depends_on:
       - payment-db
       - rabbitmq
