@@ -1,3 +1,5 @@
+
+
 services:
   rabbitmq:
     image: rabbitmq:3-management
@@ -8,21 +10,9 @@ services:
     networks:
       - utsiae-network
 
-  # ================= USER SERVICE =================
-  user-service:
-    build: ./UserService
-    container_name: user-service
-    ports:
-      - "8001:8000"
-    depends_on:
-      - user-db
-    networks:
-      - utsiae-network
-
   user-db:
     image: mysql:8
     container_name: user-db
-    restart: always
     environment:
       MYSQL_DATABASE: user_db
       MYSQL_ROOT_PASSWORD: root
@@ -31,22 +21,9 @@ services:
     networks:
       - utsiae-network
 
-  # ================= PRODUCT SERVICE =================
-  product-service:
-    build: ./ProductService
-    container_name: product-service
-    ports:
-      - "8002:8000"
-    depends_on:
-      - product-db
-      - rabbitmq
-    networks:
-      - utsiae-network
-
   product-db:
     image: mysql:8
     container_name: product-db
-    restart: always
     environment:
       MYSQL_DATABASE: laundry_product_db
       MYSQL_ROOT_PASSWORD: root
@@ -55,22 +32,9 @@ services:
     networks:
       - utsiae-network
 
-  # ================= ORDER SERVICE =================
-  order-service:
-    build: ./order-service
-    container_name: order-service
-    ports:
-      - "8003:8000"
-    depends_on:
-      - order-db
-      - rabbitmq
-    networks:
-      - utsiae-network
-
   order-db:
     image: mysql:8
     container_name: order-db
-    restart: always
     environment:
       MYSQL_DATABASE: laundry_order_db
       MYSQL_ROOT_PASSWORD: root
@@ -79,27 +43,49 @@ services:
     networks:
       - utsiae-network
 
-  # ================= PAYMENT SERVICE =================
-  payment-service:
-    build: ./payment-service
-    container_name: payment-service
-    ports:
-      - "8004:8000"
-    depends_on:
-      - payment-db
-      - rabbitmq
-    networks:
-      - utsiae-network
-
   payment-db:
     image: mysql:8
     container_name: payment-db
-    restart: always
     environment:
       MYSQL_DATABASE: laundry_payment_db
       MYSQL_ROOT_PASSWORD: root
     ports:
       - "3310:3306"
+    networks:
+      - utsiae-network
+
+  user-service:
+    build: ./UserService
+    ports:
+      - "8001:8000"
+    depends_on:
+      - user-db
+    networks:
+      - utsiae-network
+
+  product-service:
+    build: ./ProductService
+    depends_on:
+      - product-db
+      - rabbitmq
+    networks:
+      - utsiae-network
+
+  order-service:
+    build: ./order-service
+    ports:
+      - "8003:8000"
+    depends_on:
+      - order-db
+      - rabbitmq
+    networks:
+      - utsiae-network
+
+  payment-service:
+    build: ./payment-service
+    depends_on:
+      - payment-db
+      - rabbitmq
     networks:
       - utsiae-network
 
