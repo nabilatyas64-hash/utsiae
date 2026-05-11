@@ -3,12 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Payment;
+use App\Jobs\ProcessPaymentNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
-use PhpAmqpLib\Connection\AMQPStreamConnection;
-use PhpAmqpLib\Message\AMQPMessage;
 
 class PaymentController extends Controller
 {
@@ -60,10 +59,13 @@ class PaymentController extends Controller
         }
 
         try {
+            Log::info("Processing payment for order: " . $request->order_id);
+
             // 1. Ambil data dari Order Service
             $orderResponse = Http::get('http://order-service:8000/api/orders/' . $request->order_id);
 
             if (!$orderResponse->successful()) {
+                Log::error("Order service unreachable or order not found: " . $request->order_id);
                 return response()->json([
                     'status' => 'failed',
                     'message' => 'Order tidak ditemukan / service mati'
@@ -92,12 +94,13 @@ class PaymentController extends Controller
                 'status' => 'paid'
             ]);
 
-            // 4. KIRIM PESAN KE RABBITMQ
-            $this->publishToRabbitMQ($payment, $order);
+            // 4. Dispatch Job ke Queue
+            ProcessPaymentNotification::dispatch($payment, $order)->onQueue('payment.process');
+            Log::info("Dispatched ProcessPaymentNotification for payment: " . $payment->id);
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Pembayaran berhasil dan pesan dikirim ke RabbitMQ',
+                'message' => 'Pembayaran berhasil dan notifikasi diproses',
                 'data' => [
                     'payment_id' => $payment->id,
                     'order_id' => $payment->order_id,
@@ -107,40 +110,11 @@ class PaymentController extends Controller
             ], 201);
 
         } catch (\Exception $e) {
-            Log::error("Payment Error: " . $e->getMessage());
+            Log::error("Payment Controller Error: " . $e->getMessage());
             return response()->json([
                 'status' => 'error',
                 'message' => 'Terjadi kesalahan: ' . $e->getMessage()
             ], 500);
-        }
-    }
-
-    /**
-     * @param \App\Models\Payment $payment
-     * @param array $order
-     */
-    private function publishToRabbitMQ($payment, $order)
-    {
-        try {
-            $connection = new AMQPStreamConnection('localhost', 5672, 'guest', 'guest');
-            $channel = $connection->channel();
-
-            $channel->queue_declare('product-stock-update', false, true, false, false);
-
-            $payload = json_encode([
-                'order_id'   => $payment->order_id,
-                'product_id' => $order['product_id'] ?? null,
-                'quantity'   => $order['quantity'] ?? 1,
-                'status'     => 'PAID'
-            ]);
-
-            $msg = new AMQPMessage($payload, ['delivery_mode' => AMQPMessage::DELIVERY_MODE_PERSISTENT]);
-            $channel->basic_publish($msg, '', 'product-stock-update');
-
-            $channel->close();
-            $connection->close();
-        } catch (\Exception $e) {
-            Log::error("RabbitMQ Publish Error: " . $e->getMessage());
         }
     }
 

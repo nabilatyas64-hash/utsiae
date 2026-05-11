@@ -94,8 +94,19 @@ services:
 
   payment-service:
     build: ./payment-service
+    container_name: utsiae-payment-service-1
     ports:
       - "8004:8000"
+    depends_on:
+      - payment-db
+      - rabbitmq
+    networks:
+      - utsiae-network
+
+  payment-worker:
+    build: ./payment-service
+    container_name: utsiae-payment-worker-1
+    command: php artisan queue:work rabbitmq --queue=payment.process --sleep=3 --tries=3
     depends_on:
       - payment-db
       - rabbitmq
