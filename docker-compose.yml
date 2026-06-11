@@ -1,5 +1,3 @@
-
-
 services:
   rabbitmq:
     image: rabbitmq:3-management
@@ -51,6 +49,40 @@ services:
       MYSQL_ROOT_PASSWORD: root
     ports:
       - "3310:3306"
+    networks:
+      - utsiae-network
+
+  # New Database Services for the 3 Flask Services
+  notification-db:
+    image: mysql:8
+    container_name: notification-db
+    environment:
+      MYSQL_DATABASE: laundry_notification_db
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3311:3306"
+    networks:
+      - utsiae-network
+
+  review-db:
+    image: mysql:8
+    container_name: review-db
+    environment:
+      MYSQL_DATABASE: laundry_review_db
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3312:3306"
+    networks:
+      - utsiae-network
+
+  inventory-db:
+    image: mysql:8
+    container_name: inventory-db
+    environment:
+      MYSQL_DATABASE: laundry_inventory_db
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3313:3306"
     networks:
       - utsiae-network
 
@@ -110,6 +142,36 @@ services:
     depends_on:
       - payment-db
       - rabbitmq
+    networks:
+      - utsiae-network
+
+  # New Flask Services
+  notification-service:
+    build: ./notification-service
+    ports:
+      - "8005:5000"
+    depends_on:
+      - notification-db
+    networks:
+      - utsiae-network
+
+  review-service:
+    build: ./review-service
+    ports:
+      - "8006:5000"
+    depends_on:
+      - review-db
+      - user-service
+      - product-service
+    networks:
+      - utsiae-network
+
+  inventory-service:
+    build: ./inventory-service
+    ports:
+      - "8007:5000"
+    depends_on:
+      - inventory-db
     networks:
       - utsiae-network
 
