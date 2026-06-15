@@ -52,13 +52,13 @@ def validate_product(product_id):
 
 # Create tables with retry to handle DB startup delays in Docker Compose
 with app.app_context():
-    for attempt in range(10):
+    for attempt in range(20):
         try:
             db.create_all()
             print("Review Service database tables created/connected successfully.")
             break
         except OperationalError:
-            print(f"Review Database not ready, retrying in 3 seconds... ({attempt+1}/10)")
+            print(f"Review Database not ready, retrying in 3 seconds... ({attempt+1}/20)")
             time.sleep(3)
 
 @app.route('/reviews', methods=['GET'])
