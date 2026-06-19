@@ -1,0 +1,51 @@
+type User {
+    id: ID!
+    name: String!
+    email: String!
+    phone: String
+    address: String
+    created_at: String
+    updated_at: String
+}
+
+type Query {
+    users: [User]
+        @field(
+            resolver: "App\\GraphQL\\Queries\\UserQueries@all"
+        )
+
+    user(id: ID!): User
+        @field(
+            resolver: "App\\GraphQL\\Queries\\UserQueries@find"
+        )
+}
+
+type Mutation {
+    createUser(
+        name: String!
+        email: String!
+        phone: String
+        address: String
+    ): User
+        @field(
+            resolver: "App\\GraphQL\\Mutations\\UserMutations@create"
+        )
+
+    updateUser(
+        id: ID!
+        name: String!
+        email: String!
+        phone: String
+        address: String
+    ): User
+        @field(
+            resolver: "App\\GraphQL\\Mutations\\UserMutations@update"
+        )
+
+    deleteUser(
+        id: ID!
+    ): User
+        @field(
+            resolver: "App\\GraphQL\\Mutations\\UserMutations@delete"
+        )
+}

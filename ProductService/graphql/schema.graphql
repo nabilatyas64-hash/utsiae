@@ -1,0 +1,45 @@
+type Product {
+    id: ID!
+    name: String!
+    price_per_kg: Int!
+    created_at: String
+    updated_at: String
+}
+
+type Query {
+    products: [Product]
+        @field(
+            resolver: "App\\GraphQL\\Queries\\ProductQueries@all"
+        )
+
+    product(id: ID!): Product
+        @field(
+            resolver: "App\\GraphQL\\Queries\\ProductQueries@find"
+        )
+}
+
+type Mutation {
+    createProduct(
+        name: String!
+        price_per_kg: Int!
+    ): Product
+        @field(
+            resolver: "App\\GraphQL\\Mutations\\ProductMutations@create"
+        )
+
+    updateProduct(
+        id: ID!
+        name: String!
+        price_per_kg: Int!
+    ): Product
+        @field(
+            resolver: "App\\GraphQL\\Mutations\\ProductMutations@update"
+        )
+
+    deleteProduct(
+        id: ID!
+    ): Product
+        @field(
+            resolver: "App\\GraphQL\\Mutations\\ProductMutations@delete"
+        )
+}
